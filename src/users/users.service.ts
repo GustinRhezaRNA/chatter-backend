@@ -28,11 +28,15 @@ export class UsersService {
   }
 
   async update(_id: string, updateUserInput: UpdateUserInput) {
+    if (updateUserInput.password) {
+      updateUserInput.password = await this.hashPassword(
+        updateUserInput.password,
+      );
+    }
     return this.usersRepository.findOneAndUpdate(
       { _id },
       {
         ...updateUserInput,
-        password: await this.hashPassword(updateUserInput.password!),
       },
     );
   }
