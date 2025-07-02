@@ -3,7 +3,7 @@ import { User } from 'src/users/entities/user.entity';
 import { Request } from 'express';
 import { GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
 
-const getUserByContext = (context: ExecutionContext): User => {
+const getUserByContext = (context: ExecutionContext): User | undefined => {
   if (context.getType() === 'http') {
     const request = context.switchToHttp().getRequest<Request>();
     return request.user as User;
