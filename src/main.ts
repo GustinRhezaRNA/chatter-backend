@@ -11,7 +11,7 @@ async function bootstrap() {
   app.useLogger(app.get(Logger));
   app.use(cookieParser());
   app.enableCors({
-    origin: '*',
+    origin: 'http://localhost:5173',
     credentials: true,
   });
   const configService = app.get(ConfigService);

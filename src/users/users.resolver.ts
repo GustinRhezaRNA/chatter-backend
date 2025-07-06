@@ -43,4 +43,12 @@ export class UsersResolver {
   removeUser(@CurrentUser() user: TokenPayload) {
     return this.usersService.remove(user._id);
   }
+
+  @UseGuards(GqlAuthGuard)
+  //Mmeberi nama 'me' pada query ini
+  @Query(() => User, { name: 'me' })
+  //	Nama function handler di dalam kode TypeScript
+  getMe(@CurrentUser() user: TokenPayload) {
+    return user;
+  }
 }
