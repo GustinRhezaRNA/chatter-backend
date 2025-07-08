@@ -29,8 +29,15 @@ export class AuthService {
     response.cookie('Authentication', token, {
       httpOnly: true,
       expires: expires,
-      sameSite: 'lax', // <= WAJIB untuk dev lokal
-      secure: false, // <= false untuk lokal (http), true untuk production (https)
+      sameSite: 'lax', //  WAJIB untuk dev lokal
+      secure: false, // false untuk lokal (http), true untuk production (https)
+    });
+  }
+
+  logout(response: Response) {
+    response.cookie('Authentication', '', {
+      httpOnly: true,
+      expires: new Date(),
     });
   }
 }

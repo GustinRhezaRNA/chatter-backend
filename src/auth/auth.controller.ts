@@ -18,4 +18,14 @@ export class AuthController {
     await this.authService.login(user, response);
     return { message: 'Login success' };
   }
+
+  @Post('logout')
+  logout(
+    @CurrentUser() user: User,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    this.authService.logout(response);
+    return { message: 'Logout success' };
+  }
+
 }
