@@ -16,7 +16,7 @@ import { MessageCreatedArgs } from './dto/message-created.args';
 export class MessagesResolver {
   constructor(
     private readonly messagesService: MessagesService,
-    @Inject(PUB_SUB) private readonly pubSub: PubSub,
+    @Inject(PUB_SUB) private readonly pubsub: PubSub,
   ) {}
 
   @Mutation(() => Message)
@@ -43,6 +43,6 @@ export class MessagesResolver {
     },
   })
   messageCreated(@Args() _messageCreatedArgs: MessageCreatedArgs) {
-    return this.pubsub.asyncIterator(MESSAGE_CREATED);
+    return this.pubsub.asyncIterableIterator(MESSAGE_CREATED);
   }
 }
