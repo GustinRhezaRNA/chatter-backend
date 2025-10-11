@@ -34,6 +34,29 @@ export class AuthService {
     });
   }
 
+  verifyWs(request: any): TokenPayload {
+    // Coba ambil cookie dari headers (support fetch Headers dan Express)
+    const cookieHeader =
+      typeof request.headers.get === 'function'
+        ? request.headers.get('cookie') // fetch-style Headers
+        : request.headers.cookie; // Express-style headers
+
+    if (!cookieHeader) {
+      throw new Error('Tidak ada cookie pada request');
+    }
+
+    // Pisah dan cari cookie Authentication
+    const cookies = cookieHeader.split('; ');
+    const authCookie = cookies.find((c) => c.startsWith('Authentication='));
+
+    if (!authCookie) {
+      throw new Error('Cookie Authentication tidak ditemukan');
+    }
+
+    const jwt = authCookie.split('Authentication=')[1];
+    return this.jwtService.verify(jwt);
+  }
+
   logout(response: Response) {
     response.cookie('Authentication', '', {
       httpOnly: true,

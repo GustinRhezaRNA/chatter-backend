@@ -11,7 +11,7 @@ import { MessagesModule } from './messages/messages.module';
     DatabaseModule.forFeaturedModels([{ name: Chat.name, schema: ChatSchema }]),
     forwardRef(() => MessagesModule),
   ],
-  exports: [ChatsRepository],
+  exports: [ChatsRepository, ChatsService],
   providers: [ChatsResolver, ChatsService, ChatsRepository],
-})
+}) 
 export class ChatsModule {}
