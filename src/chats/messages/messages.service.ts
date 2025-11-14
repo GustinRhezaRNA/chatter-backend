@@ -1,58 +1,76 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ChatsRepository } from '../chats.repository';
 import { CreateMessageInput } from './dto/create-message.input';
-import { Message } from './entities/message.entity';
 import { Types } from 'mongoose';
 import { GetMessagesArgs } from './dto/get-messages.args';
 import { PUB_SUB } from 'src/common/constants/injection-token';
 import { PubSub } from 'graphql-subscriptions';
 import { MESSAGE_CREATED } from './constants/pubsub-trigger';
-import { ChatsService } from '../chats.service';
+import { MessageDocument } from './entities/message.document';
+import { Message } from './entities/message.entity';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class MessagesService {
   constructor(
     private readonly chatsRepository: ChatsRepository,
-    private readonly chatsService: ChatsService,
+    private readonly userService: UsersService,
     @Inject(PUB_SUB) private readonly pubsub: PubSub,
   ) {}
   async createMessage({ content, chatId }: CreateMessageInput, userId: string) {
-    const message: Message = {
+    const messageDocument: MessageDocument = {
       content,
-      userId,
-      chatId,
+      userId: new Types.ObjectId(userId),
       _id: new Types.ObjectId(),
       createdAt: new Date(),
     };
     await this.chatsRepository.findOneAndUpdate(
       {
         _id: chatId,
-        ...this.chatsService.userChatFilter(userId),
       },
       {
-        $push: { messages: message },
+        $push: { messages: messageDocument },
       },
     );
+    const message: Message = {
+      ...messageDocument,
+      chatId,
+      user: await this.userService.findOne(userId),
+    };
     await this.pubsub.publish(MESSAGE_CREATED, { messageCreated: message });
     return message;
   }
 
   // Get messages for a specific chat
-  async getMessages({ chatId }: GetMessagesArgs, userId: string) {
-    return (
-      await this.chatsRepository.findOne({
-        _id: chatId,
-        ...this.chatsService.userChatFilter(userId),
-      })
-    ).messages;
+  async getMessages({ chatId }: GetMessagesArgs) {
+    return this.chatsRepository.model.aggregate([
+      {
+        $match: {
+          _id: new Types.ObjectId(chatId),
+        },
+      }, 
+      { $unwind: '$messages' },
+      {
+        $replaceRoot: {
+          newRoot: '$messages',
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: '$user' },
+      { $unset: 'userId' },
+      { $set: { chatId } },
+    ]);
   }
 
   // Get every new message in a specific chat
-  async messageCreated({ chatId }: GetMessagesArgs, userId: string) {
-    await this.chatsRepository.findOne({
-      _id: chatId,
-      ...this.chatsService.userChatFilter(userId),
-    });
+  async messageCreated() {
     return this.pubsub.asyncIterableIterator(MESSAGE_CREATED);
   }
 }
