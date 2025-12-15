@@ -3,6 +3,7 @@ import { CreateChatInput } from './dto/create-chat.input';
 import { UpdateChatInput } from './dto/update-chat.input';
 import { ChatsRepository } from './chats.repository';
 import { PipelineStage, Types } from 'mongoose';
+import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
 
 @Injectable()
 export class ChatsService {
@@ -16,22 +17,29 @@ export class ChatsService {
     });
   }
 
-  async findMany(prePipelineStages: PipelineStage[] = []) {
+  async findMany(
+    prePipelineStages: PipelineStage[] = [],
+    paginationArgs?: PaginationArgs,
+  ) {
     const chats = await this.chatsRepository.model.aggregate([
       ...prePipelineStages,
       {
         $set: {
           latestMessage: {
-            $arrayElemAt: [
-              { $slice: ['$messages', -1] }, // ambil 1 item terakhir (array)
-              0, // ambil elemen pertama dari array tersebut
+            $cond: [
+              '$messages',
+              { $arrayElemAt: ['$messages', -1] },
+              {
+                createdAt: new Date(),
+              },
             ],
           },
         },
       },
-      {
-        $unset: 'messages',
-      },
+      { $sort: { 'latestMessage.createdAt': -1 } },
+      { $skip: paginationArgs?.skip ?? 0 },
+      { $limit: paginationArgs?.limit ?? 15 },
+      { $unset: 'messages' },
       {
         $lookup: {
           from: 'users',
@@ -42,7 +50,7 @@ export class ChatsService {
       },
     ]);
     chats.forEach((chat) => {
-      if (!chat.latestMessage._id) {
+      if (!chat.latestMessage?._id) {
         delete chat.latestMessage;
         return;
       }
@@ -51,6 +59,10 @@ export class ChatsService {
       chat.latestMessage.chatId = chat._id;
     });
     return chats;
+  }
+
+  async countChats() {
+    return this.chatsRepository.model.countDocuments({});
   }
 
   async findOne(_id: string) {
