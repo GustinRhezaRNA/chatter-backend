@@ -55,6 +55,12 @@ export class ChatsService {
         return;
       }
       chat.latestMessage.user = chat.latestMessage.user[0];
+      //Sementara gini dulu, karena user dihapus maka chat yang memiliki idnya menjadi undefined dan menyebabkan error makanya dihapus juga, 
+      // TODO: Berikan user soft delete, message immutable dan fallback ui deleted user saja 
+      if (!chat.latestMessage.user) {
+        delete chat.latestMessage;
+        return;
+      }
       delete chat.latestMessage.userId;
       chat.latestMessage.chatId = chat._id;
     });

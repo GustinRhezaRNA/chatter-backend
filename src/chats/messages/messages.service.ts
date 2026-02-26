@@ -16,7 +16,7 @@ export class MessagesService {
     private readonly chatsRepository: ChatsRepository,
     private readonly userService: UsersService,
     @Inject(PUB_SUB) private readonly pubsub: PubSub,
-  ) {}
+  ) { }
   async createMessage({ content, chatId }: CreateMessageInput, userId: string) {
     const messageDocument: MessageDocument = {
       content,
@@ -42,19 +42,24 @@ export class MessagesService {
   }
 
   // Get messages for a specific chat
-  async getMessages({ chatId }: GetMessagesArgs) {
+  async getMessages({ chatId, skip, limit }: GetMessagesArgs) {
     return this.chatsRepository.model.aggregate([
       {
         $match: {
           _id: new Types.ObjectId(chatId),
         },
-      }, 
+      },
       { $unwind: '$messages' },
       {
         $replaceRoot: {
           newRoot: '$messages',
         },
       },
+      {
+        $sort: { createdAt: -1 },
+      },
+      { $skip: skip },
+      { $limit: limit },
       {
         $lookup: {
           from: 'users',
@@ -63,7 +68,7 @@ export class MessagesService {
           as: 'user',
         },
       },
-      { $unwind: '$user' },
+      { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
       { $unset: 'userId' },
       { $set: { chatId } },
     ]);
@@ -72,5 +77,23 @@ export class MessagesService {
   // Get every new message in a specific chat
   async messageCreated() {
     return this.pubsub.asyncIterableIterator(MESSAGE_CREATED);
+  }
+
+  async countMessages(chatId: string) {
+    return (
+      await this.chatsRepository.model.aggregate([
+        {
+          $match: {
+            _id: new Types.ObjectId(chatId),
+          },
+        },
+        {
+          $unwind: '$messages',
+        },
+        {
+          $count: 'messages',
+        },
+      ])
+    )[0]
   }
 }
