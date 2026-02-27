@@ -7,10 +7,20 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
 import { UsersRepository } from './users.repository';
+import { S3Service } from 'src/common/s3/s3.service';
+import { USER_BUCKET, USER_IMAGE_FILE_EXTENSION } from './users.constants';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(private readonly usersRepository: UsersRepository, private readonly s3Service: S3Service) { }
+
+  async uploadImage(file: Buffer, userId: string) {
+    await this.s3Service.upload({
+      bucket: USER_BUCKET,
+      file,
+      key: `${userId}.${USER_IMAGE_FILE_EXTENSION}`
+    });
+  }
 
   private async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10);
