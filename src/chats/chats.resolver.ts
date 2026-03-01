@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int, Subscription } from '@nestjs/graphql';
 import { ChatsService } from './chats.service';
 import { Chat } from './entities/chat.entity';
 import { CreateChatInput } from './dto/create-chat.input';
@@ -42,5 +42,10 @@ export class ChatsResolver {
   @Mutation(() => Chat)
   removeChat(@Args('id', { type: () => Int }) id: number) {
     return this.chatsService.remove(id);
+  }
+
+  @Subscription(() => Chat)
+  chatCreated() {
+    return this.chatsService.chatCreated();
   }
 }

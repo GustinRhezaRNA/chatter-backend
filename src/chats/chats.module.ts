@@ -8,15 +8,17 @@ import { MessagesModule } from './messages/messages.module';
 import { ChatSchema } from './entities/chat.document';
 import { ChatsController } from './chats.controller';
 import { UsersModule } from 'src/users/users.module';
+import { PubSubModule } from 'src/common/pubsub/pubsub.module';
 
 @Module({
   imports: [
     DatabaseModule.forFeaturedModels([{ name: Chat.name, schema: ChatSchema }]),
     forwardRef(() => MessagesModule),
     UsersModule,
+    PubSubModule,
   ],
   exports: [ChatsRepository],
   providers: [ChatsResolver, ChatsService, ChatsRepository],
   controllers: [ChatsController],
 })
-export class ChatsModule {}
+export class ChatsModule { }

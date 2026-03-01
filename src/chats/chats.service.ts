@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateChatInput } from './dto/create-chat.input';
 import { UpdateChatInput } from './dto/update-chat.input';
 import { ChatsRepository } from './chats.repository';
@@ -6,17 +6,27 @@ import { PipelineStage, Types } from 'mongoose';
 import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
 import { UsersService } from 'src/users/users.service';
 import { Chat } from './entities/chat.entity';
+import { PUB_SUB } from '../common/constants/injection-token';
+import { PubSub } from 'graphql-subscriptions';
+import { CHAT_CREATED } from './constants/pubsub-trigger';
 
 @Injectable()
 export class ChatsService {
-  constructor(private readonly chatsRepository: ChatsRepository, private readonly usersService: UsersService) { }
+  constructor(
+    private readonly chatsRepository: ChatsRepository,
+    private readonly usersService: UsersService,
+    @Inject(PUB_SUB) private readonly pubsub: PubSub,
+  ) { }
 
   async create(createChatInput: CreateChatInput, userId: string) {
-    return this.chatsRepository.create({
+    const chatDocument = await this.chatsRepository.create({
       ...createChatInput,
       userId,
       messages: [],
     });
+    const chat = await this.findOne(chatDocument._id!.toHexString());
+    await this.pubsub.publish(CHAT_CREATED, { chatCreated: chat });
+    return chat;
   }
 
   async findMany(
@@ -97,5 +107,9 @@ export class ChatsService {
 
   remove(id: number) {
     return `This action removes a #${id} chat`;
+  }
+
+  async chatCreated() {
+    return this.pubsub.asyncIterableIterator(CHAT_CREATED);
   }
 }
