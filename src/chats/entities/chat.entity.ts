@@ -4,8 +4,11 @@ import { Message } from '../messages/entities/message.entity';
 
 @ObjectType()
 export class Chat extends AbstractEntity {
-  @Field()
+  @Field({ nullable: true })
   name?: string;
+
+  @Field({ nullable: true })
+  description?: string;
 
   @Field(() => Message, { nullable: true })
   latestMessage?: Message;

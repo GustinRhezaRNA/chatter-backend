@@ -11,7 +11,7 @@ import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
 
 @Resolver(() => Chat)
 export class ChatsResolver {
-  constructor(private readonly chatsService: ChatsService) {}
+  constructor(private readonly chatsService: ChatsService) { }
 
   @UseGuards(GqlAuthGuard)
   @Mutation(() => Chat)
@@ -33,9 +33,10 @@ export class ChatsResolver {
     return this.chatsService.findOne(_id);
   }
 
+  @UseGuards(GqlAuthGuard)
   @Mutation(() => Chat)
-  updateChat(@Args('updateChatInput') updateChatInput: UpdateChatInput) {
-    return this.chatsService.update(updateChatInput.id, updateChatInput);
+  async updateChat(@Args('updateChatInput') updateChatInput: UpdateChatInput): Promise<Chat> {
+    return this.chatsService.update(updateChatInput._id, updateChatInput);
   }
 
   @Mutation(() => Chat)

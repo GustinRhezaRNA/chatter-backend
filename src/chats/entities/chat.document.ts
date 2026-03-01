@@ -10,6 +10,9 @@ export class ChatDocument extends AbstractEntity {
   @Prop({ type: String, required: true })
   name: string;
 
+  @Prop({ type: String, required: false })
+  description?: string;
+
   @Prop([MessageDocument])
   messages: MessageDocument[];
 }

@@ -4,10 +4,12 @@ import { UpdateChatInput } from './dto/update-chat.input';
 import { ChatsRepository } from './chats.repository';
 import { PipelineStage, Types } from 'mongoose';
 import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
+import { UsersService } from 'src/users/users.service';
+import { Chat } from './entities/chat.entity';
 
 @Injectable()
 export class ChatsService {
-  constructor(private readonly chatsRepository: ChatsRepository) {}
+  constructor(private readonly chatsRepository: ChatsRepository, private readonly usersService: UsersService) { }
 
   async create(createChatInput: CreateChatInput, userId: string) {
     return this.chatsRepository.create({
@@ -54,13 +56,14 @@ export class ChatsService {
         delete chat.latestMessage;
         return;
       }
-      chat.latestMessage.user = chat.latestMessage.user[0];
+      const rawUser = chat.latestMessage.user[0];
       //Sementara gini dulu, karena user dihapus maka chat yang memiliki idnya menjadi undefined dan menyebabkan error makanya dihapus juga, 
       // TODO: Berikan user soft delete, message immutable dan fallback ui deleted user saja 
-      if (!chat.latestMessage.user) {
+      if (!rawUser) {
         delete chat.latestMessage;
         return;
       }
+      chat.latestMessage.user = this.usersService.toEntity(rawUser);
       delete chat.latestMessage.userId;
       chat.latestMessage.chatId = chat._id;
     });
@@ -83,8 +86,13 @@ export class ChatsService {
     return chats[0];
   }
 
-  update(id: number, updateChatInput: UpdateChatInput) {
-    return `This action updates a #${id} chat`;
+  async update(_id: string, updateChatInput: UpdateChatInput): Promise<Chat> {
+    const { _id: chatId, ...rest } = updateChatInput;
+    await this.chatsRepository.findOneAndUpdate(
+      { _id: new Types.ObjectId(chatId) },
+      { $set: rest },
+    );
+    return this.findOne(_id);
   }
 
   remove(id: number) {
