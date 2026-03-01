@@ -43,7 +43,7 @@ export class MessagesService {
 
   // Get messages for a specific chat
   async getMessages({ chatId, skip, limit }: GetMessagesArgs) {
-    return this.chatsRepository.model.aggregate([
+    const messages = await this.chatsRepository.model.aggregate([
       {
         $match: {
           _id: new Types.ObjectId(chatId),
@@ -72,6 +72,12 @@ export class MessagesService {
       { $unset: 'userId' },
       { $set: { chatId } },
     ]);
+    return messages
+      .filter((message) => message.user)
+      .map((message) => ({
+        ...message,
+        user: this.userService.toEntity(message.user),
+      }));
   }
 
   // Get every new message in a specific chat
@@ -80,20 +86,19 @@ export class MessagesService {
   }
 
   async countMessages(chatId: string) {
-    return (
-      await this.chatsRepository.model.aggregate([
-        {
-          $match: {
-            _id: new Types.ObjectId(chatId),
-          },
+    const result = await this.chatsRepository.model.aggregate([
+      {
+        $match: {
+          _id: new Types.ObjectId(chatId),
         },
-        {
-          $unwind: '$messages',
-        },
-        {
-          $count: 'messages',
-        },
-      ])
-    )[0]
+      },
+      {
+        $unwind: '$messages',
+      },
+      {
+        $count: 'messages',
+      },
+    ]);
+    return result[0] ?? { messages: 0 };
   }
 }
