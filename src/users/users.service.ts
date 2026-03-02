@@ -15,7 +15,10 @@ import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository, private readonly s3Service: S3Service) { }
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly s3Service: S3Service,
+  ) {}
 
   async uploadImage(file: Buffer, userId: string) {
     await this.s3Service.upload({
@@ -31,13 +34,15 @@ export class UsersService {
 
   async create(createUserInput: CreateUserInput) {
     try {
-      return this.toEntity(await this.usersRepository.create({
-        ...createUserInput,
-        password: await this.hashPassword(createUserInput.password),
-      }));
-    } catch (err: any) {
+      return this.toEntity(
+        await this.usersRepository.create({
+          ...createUserInput,
+          password: await this.hashPassword(createUserInput.password),
+        }),
+      );
+    } catch (err: unknown) {
       if (
-        err.message &&
+        err instanceof Error &&
         err.message.includes('duplicate key error collection')
       ) {
         throw new UnprocessableEntityException('Email already exists');
@@ -47,7 +52,9 @@ export class UsersService {
   }
 
   async findAll() {
-    return (await this.usersRepository.find({})).map((user) => this.toEntity(user));
+    return (await this.usersRepository.find({})).map((user) =>
+      this.toEntity(user),
+    );
   }
 
   async findOne(_id: string) {
@@ -60,10 +67,12 @@ export class UsersService {
         updateUserInput.password,
       );
     }
-    return this.toEntity(await this.usersRepository.findOneAndUpdate(
-      { _id: new Types.ObjectId(_id) },
-      { $set: updateUserInput },
-    ));
+    return this.toEntity(
+      await this.usersRepository.findOneAndUpdate(
+        { _id: new Types.ObjectId(_id) },
+        { $set: updateUserInput },
+      ),
+    );
   }
 
   async remove(_id: string) {
@@ -87,12 +96,15 @@ export class UsersService {
       _id: userDocument._id,
       email: userDocument.email,
       username: userDocument.username,
-      imageUrl: this.s3Service.getObjectUrl(this.getUserImage(userDocument._id!.toHexString()), USER_BUCKET),
+      imageUrl: this.s3Service.getObjectUrl(
+        this.getUserImage(userDocument._id!.toHexString()),
+        USER_BUCKET,
+      ),
     };
     return user;
   }
 
   private getUserImage(userId: string) {
-    return `${userId}.${USER_IMAGE_FILE_EXTENSION}`
+    return `${userId}.${USER_IMAGE_FILE_EXTENSION}`;
   }
 }

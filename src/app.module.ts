@@ -14,6 +14,13 @@ import { PubSubModule } from './common/pubsub/pubsub.module';
 import { Request } from 'express';
 import { AuthService } from './auth/auth.service';
 
+interface SubscriptionContext {
+  extra: {
+    request: Request;
+  };
+  user?: unknown;
+}
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -30,11 +37,12 @@ import { AuthService } from './auth/auth.service';
         autoSchemaFile: true,
         subscriptions: {
           'graphql-ws': {
-            onConnect: (context: any) => {
+            onConnect: (context) => {
               try {
-                const request: Request = context.extra.request;
+                const ctx = context as unknown as SubscriptionContext;
+                const request: Request = ctx.extra.request;
                 const user = authService.verifyWs(request);
-                context.user = user;
+                ctx.user = user;
               } catch (err) {
                 new Logger().error(err);
                 throw new UnauthorizedException();

@@ -11,11 +11,11 @@ export class AuthController {
 
   @Post('login')
   @UseGuards(LocalAuthGuard)
-  async login(
+  login(
     @CurrentUser() user: User,
     @Res({ passthrough: true }) response: Response,
   ) {
-    await this.authService.login(user, response);
+    this.authService.login(user, response);
     return { message: 'Login success' };
   }
 
@@ -27,5 +27,4 @@ export class AuthController {
     this.authService.logout(response);
     return { message: 'Logout success' };
   }
-
 }

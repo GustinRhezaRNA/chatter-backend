@@ -9,6 +9,7 @@ import { MESSAGE_CREATED } from './constants/pubsub-trigger';
 import { MessageDocument } from './entities/message.document';
 import { Message } from './entities/message.entity';
 import { UsersService } from 'src/users/users.service';
+import { UserDocument } from '../../users/entities/user.document.entity';
 
 @Injectable()
 export class MessagesService {
@@ -16,7 +17,7 @@ export class MessagesService {
     private readonly chatsRepository: ChatsRepository,
     private readonly userService: UsersService,
     @Inject(PUB_SUB) private readonly pubsub: PubSub,
-  ) { }
+  ) {}
   async createMessage({ content, chatId }: CreateMessageInput, userId: string) {
     const messageDocument: MessageDocument = {
       content,
@@ -42,7 +43,11 @@ export class MessagesService {
   }
 
   // Get messages for a specific chat
-  async getMessages({ chatId, skip, limit }: GetMessagesArgs) {
+  async getMessages({
+    chatId,
+    skip,
+    limit,
+  }: GetMessagesArgs): Promise<Message[]> {
     const messages = await this.chatsRepository.model.aggregate([
       {
         $match: {
@@ -58,8 +63,8 @@ export class MessagesService {
       {
         $sort: { createdAt: -1 },
       },
-      { $skip: skip },
-      { $limit: limit },
+      { $skip: Number(skip) },
+      { $limit: Number(limit) },
       {
         $lookup: {
           from: 'users',
@@ -72,16 +77,19 @@ export class MessagesService {
       { $unset: 'userId' },
       { $set: { chatId } },
     ]);
-    return messages
-      .filter((message) => message.user)
-      .map((message) => ({
-        ...message,
-        user: this.userService.toEntity(message.user),
-      }));
+    return (messages as unknown[])
+      .filter((message) => (message as Record<string, unknown>).user)
+      .map((message) => {
+        const msg = message as Message & { user: UserDocument };
+        return {
+          ...msg,
+          user: this.userService.toEntity(msg.user),
+        };
+      });
   }
 
   // Get every new message in a specific chat
-  async messageCreated() {
+  messageCreated() {
     return this.pubsub.asyncIterableIterator(MESSAGE_CREATED);
   }
 
@@ -99,6 +107,6 @@ export class MessagesService {
         $count: 'messages',
       },
     ]);
-    return result[0] ?? { messages: 0 };
+    return (result[0] as { messages: number }) ?? { messages: 0 };
   }
 }

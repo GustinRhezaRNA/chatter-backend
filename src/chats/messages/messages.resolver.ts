@@ -11,7 +11,7 @@ import { MessageCreatedArgs } from './dto/message-created.args';
 
 @Resolver(() => Message)
 export class MessagesResolver {
-  constructor(private readonly messagesService: MessagesService) { }
+  constructor(private readonly messagesService: MessagesService) {}
 
   @Mutation(() => Message)
   @UseGuards(GqlAuthGuard)
@@ -31,7 +31,11 @@ export class MessagesResolver {
   }
 
   @Subscription(() => Message, {
-    filter: (payload, variables: MessageCreatedArgs, context) => {
+    filter: (
+      payload: { messageCreated: Message },
+      variables: MessageCreatedArgs,
+      context: { req?: { user?: { _id: string } }; user?: { _id: string } },
+    ) => {
       const userId = context.req?.user?._id || context.user?._id;
       const message: Message = payload.messageCreated;
       return (
@@ -40,7 +44,7 @@ export class MessagesResolver {
       );
     },
   })
-  messageCreated(@Args() _messageCreatedArgs: MessageCreatedArgs) {
+  messageCreated() {
     return this.messagesService.messageCreated();
   }
 }

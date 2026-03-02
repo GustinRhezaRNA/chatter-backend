@@ -9,6 +9,8 @@ import { Chat } from './entities/chat.entity';
 import { PUB_SUB } from '../common/constants/injection-token';
 import { PubSub } from 'graphql-subscriptions';
 import { CHAT_CREATED } from './constants/pubsub-trigger';
+import { UserDocument } from '../users/entities/user.document.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class ChatsService {
@@ -16,9 +18,12 @@ export class ChatsService {
     private readonly chatsRepository: ChatsRepository,
     private readonly usersService: UsersService,
     @Inject(PUB_SUB) private readonly pubsub: PubSub,
-  ) { }
+  ) {}
 
-  async create(createChatInput: CreateChatInput, userId: string) {
+  async create(
+    createChatInput: CreateChatInput,
+    userId: string,
+  ): Promise<Chat> {
     const chatDocument = await this.chatsRepository.create({
       ...createChatInput,
       userId,
@@ -32,7 +37,7 @@ export class ChatsService {
   async findMany(
     prePipelineStages: PipelineStage[] = [],
     paginationArgs?: PaginationArgs,
-  ) {
+  ): Promise<Chat[]> {
     const chats = await this.chatsRepository.model.aggregate([
       ...prePipelineStages,
       {
@@ -61,30 +66,39 @@ export class ChatsService {
         },
       },
     ]);
-    chats.forEach((chat) => {
+    chats.forEach((chatRaw: unknown) => {
+      const chat = chatRaw as Chat & {
+        latestMessage?: {
+          _id?: string;
+          user?: UserDocument[] | User;
+          userId?: string;
+          chatId?: string | Types.ObjectId;
+        };
+      };
       if (!chat.latestMessage?._id) {
         delete chat.latestMessage;
         return;
       }
-      const rawUser = chat.latestMessage.user[0];
-      //Sementara gini dulu, karena user dihapus maka chat yang memiliki idnya menjadi undefined dan menyebabkan error makanya dihapus juga, 
-      // TODO: Berikan user soft delete, message immutable dan fallback ui deleted user saja 
+      const userArr = chat.latestMessage.user as UserDocument[];
+      const rawUser = userArr?.[0];
+      //Sementara gini dulu, karena user dihapus maka chat yang memiliki idnya menjadi undefined dan menyebabkan error makanya dihapus juga,
+      // TODO: Berikan user soft delete, message immutable dan fallback ui deleted user saja
       if (!rawUser) {
         delete chat.latestMessage;
         return;
       }
       chat.latestMessage.user = this.usersService.toEntity(rawUser);
       delete chat.latestMessage.userId;
-      chat.latestMessage.chatId = chat._id;
+      chat.latestMessage.chatId = String(chat._id);
     });
-    return chats;
+    return chats as Chat[];
   }
 
   async countChats() {
     return this.chatsRepository.model.countDocuments({});
   }
 
-  async findOne(_id: string) {
+  async findOne(_id: string): Promise<Chat> {
     const chats = await this.findMany([
       {
         $match: { _id: new Types.ObjectId(_id) },
@@ -109,7 +123,7 @@ export class ChatsService {
     return `This action removes a #${id} chat`;
   }
 
-  async chatCreated() {
+  chatCreated() {
     return this.pubsub.asyncIterableIterator(CHAT_CREATED);
   }
 }

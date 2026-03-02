@@ -1,4 +1,11 @@
-import { Resolver, Query, Mutation, Args, Int, Subscription } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  Int,
+  Subscription,
+} from '@nestjs/graphql';
 import { ChatsService } from './chats.service';
 import { Chat } from './entities/chat.entity';
 import { CreateChatInput } from './dto/create-chat.input';
@@ -11,7 +18,7 @@ import { PaginationArgs } from 'src/common/dto/pagination-args.dto';
 
 @Resolver(() => Chat)
 export class ChatsResolver {
-  constructor(private readonly chatsService: ChatsService) { }
+  constructor(private readonly chatsService: ChatsService) {}
 
   @UseGuards(GqlAuthGuard)
   @Mutation(() => Chat)
@@ -35,7 +42,9 @@ export class ChatsResolver {
 
   @UseGuards(GqlAuthGuard)
   @Mutation(() => Chat)
-  async updateChat(@Args('updateChatInput') updateChatInput: UpdateChatInput): Promise<Chat> {
+  async updateChat(
+    @Args('updateChatInput') updateChatInput: UpdateChatInput,
+  ): Promise<Chat> {
     return this.chatsService.update(updateChatInput._id, updateChatInput);
   }
 

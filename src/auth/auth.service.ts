@@ -5,6 +5,14 @@ import { Response } from 'express';
 import { User } from 'src/users/entities/user.entity';
 import { TokenPayload } from './token-payload.interface';
 
+export interface WsRequest {
+  headers: {
+    cookie?: string;
+    get?: (name: string) => string | null | undefined;
+    [key: string]: unknown;
+  };
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -12,7 +20,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async login(user: User, response: Response) {
+  login(user: User, response: Response) {
     const expires = new Date();
     expires.setSeconds(
       expires.getSeconds() +
@@ -34,14 +42,14 @@ export class AuthService {
     });
   }
 
-  verifyWs(request: any): TokenPayload {
+  verifyWs(request: WsRequest): TokenPayload {
     // Coba ambil cookie dari headers (support fetch Headers dan Express)
     const cookieHeader =
       typeof request.headers.get === 'function'
         ? request.headers.get('cookie') // fetch-style Headers
         : request.headers.cookie; // Express-style headers
 
-    if (!cookieHeader) {
+    if (!cookieHeader || typeof cookieHeader !== 'string') {
       throw new Error('Tidak ada cookie pada request');
     }
 
@@ -54,7 +62,7 @@ export class AuthService {
     }
 
     const jwt = authCookie.split('Authentication=')[1];
-    return this.jwtService.verify(jwt);
+    return this.jwtService.verify<TokenPayload>(jwt);
   }
 
   logout(response: Response) {

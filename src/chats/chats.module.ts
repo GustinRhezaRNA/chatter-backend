@@ -21,4 +21,4 @@ import { PubSubModule } from 'src/common/pubsub/pubsub.module';
   providers: [ChatsResolver, ChatsService, ChatsRepository],
   controllers: [ChatsController],
 })
-export class ChatsModule { }
+export class ChatsModule {}

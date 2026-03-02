@@ -8,7 +8,9 @@ const getUserByContext = (context: ExecutionContext): User | undefined => {
     const request = context.switchToHttp().getRequest<Request>();
     return request.user as User;
   } else if (context.getType<GqlContextType>() === 'graphql') {
-    return GqlExecutionContext.create(context).getContext().req.user as User;
+    return GqlExecutionContext.create(context).getContext<{
+      req: { user: User };
+    }>().req.user;
   }
 };
 
