@@ -35,7 +35,10 @@ interface SubscriptionContext {
       driver: ApolloDriver,
       useFactory: (authService: AuthService) => ({
         autoSchemaFile: true,
-        cors: true,
+        cors: {
+          origin: true,
+          credentials: true,
+        },
         subscriptions: {
           'graphql-ws': {
             onConnect: (context) => {

@@ -38,8 +38,12 @@ export class AuthService {
     response.cookie('Authentication', token, {
       httpOnly: true,
       expires: expires,
-      sameSite: 'lax', //  WAJIB untuk dev lokal
-      secure: false, // false untuk lokal (http), true untuk production (https)
+      // If in production (cross-domain), it must be 'none'. 
+      // If local dev (same-domain or localhost), 'lax' is safer if you aren't using HTTPS locally.
+      sameSite: this.configService.get('NODE_ENV') === 'production' ? 'none' : 'lax',
+
+      // Secure must be true if sameSite is 'none'
+      secure: this.configService.get('NODE_ENV') === 'production',
     });
 
     return token;
