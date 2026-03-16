@@ -15,8 +15,8 @@ export class AuthController {
     @CurrentUser() user: User,
     @Res({ passthrough: true }) response: Response,
   ) {
-    this.authService.login(user, response);
-    return { message: 'Login success' };
+    const token = this.authService.login(user, response);
+    return { message: 'Login success', token };
   }
 
   @Post('logout')
