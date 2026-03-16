@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import { User } from 'src/users/entities/user.entity';
 import { TokenPayload } from './token-payload.interface';
+import { getJwt } from './jwt';
 
 export interface WsRequest {
   headers: {
@@ -18,13 +19,13 @@ export class AuthService {
   constructor(
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   login(user: User, response: Response) {
     const expires = new Date();
     expires.setSeconds(
       expires.getSeconds() +
-        this.configService.getOrThrow<number>('JWT_EXPIRATION'),
+      this.configService.getOrThrow<number>('JWT_EXPIRATION'),
     );
 
     const tokenPayload: TokenPayload = {
@@ -40,29 +41,39 @@ export class AuthService {
       sameSite: 'lax', //  WAJIB untuk dev lokal
       secure: false, // false untuk lokal (http), true untuk production (https)
     });
+
+    return token;
   }
 
-  verifyWs(request: WsRequest): TokenPayload {
-    // Coba ambil cookie dari headers (support fetch Headers dan Express)
+  verifyWs(request: WsRequest, connectionParams?: any): TokenPayload {
+    let token: string | null = null;
+
     const cookieHeader =
       typeof request.headers.get === 'function'
-        ? request.headers.get('cookie') // fetch-style Headers
-        : request.headers.cookie; // Express-style headers
+        ? request.headers.get('cookie')
+        : request.headers.cookie;
 
-    if (!cookieHeader || typeof cookieHeader !== 'string') {
-      throw new Error('Tidak ada cookie pada request');
+    if (cookieHeader && typeof cookieHeader === 'string') {
+      const cookies = cookieHeader.split(';');
+
+      const authCookie = cookies
+        .map((c) => c.trim())
+        .find((c) => c.startsWith('Authentication='));
+
+      if (authCookie) {
+        token = authCookie.split('=')[1];
+      }
     }
 
-    // Pisah dan cari cookie Authentication
-    const cookies = cookieHeader.split('; ');
-    const authCookie = cookies.find((c) => c.startsWith('Authentication='));
-
-    if (!authCookie) {
-      throw new Error('Cookie Authentication tidak ditemukan');
+    if (!token) {
+      token = getJwt(connectionParams?.token);
     }
 
-    const jwt = authCookie.split('Authentication=')[1];
-    return this.jwtService.verify<TokenPayload>(jwt);
+    if (!token) {
+      throw new Error('Valid authentication token tidak ditemukan');
+    }
+
+    return this.jwtService.verify<TokenPayload>(token);
   }
 
   logout(response: Response) {
@@ -70,5 +81,6 @@ export class AuthService {
       httpOnly: true,
       expires: new Date(),
     });
+
   }
 }

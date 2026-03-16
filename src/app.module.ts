@@ -42,7 +42,7 @@ interface SubscriptionContext {
               try {
                 const ctx = context as unknown as SubscriptionContext;
                 const request: Request = ctx.extra.request;
-                const user = authService.verifyWs(request);
+                const user = authService.verifyWs(request, context.connectionParams);
                 ctx.user = user;
               } catch (err) {
                 new Logger().error(err);
@@ -67,14 +67,14 @@ interface SubscriptionContext {
             transport: isProduction
               ? undefined
               : {
-                  target: 'pino-pretty',
-                  options: {
-                    colorize: true,
-                    translateTime: 'SYS:standard',
-                    ignore: 'pid,hostname',
-                    singleLine: true,
-                  },
+                target: 'pino-pretty',
+                options: {
+                  colorize: true,
+                  translateTime: 'SYS:standard',
+                  ignore: 'pid,hostname',
+                  singleLine: true,
                 },
+              },
             level: isProduction ? 'info' : 'debug',
           },
         };
@@ -88,4 +88,4 @@ interface SubscriptionContext {
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
