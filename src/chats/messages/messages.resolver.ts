@@ -44,7 +44,7 @@ export class MessagesResolver {
       );
     },
   })
-  messageCreated() {
+  messageCreated(@Args() _messageCreatedArgs: MessageCreatedArgs) {
     return this.messagesService.messageCreated();
   }
 }
