@@ -11,7 +11,9 @@ async function bootstrap() {
   app.useLogger(app.get(Logger));
   app.use(cookieParser());
   app.enableCors({
-    origin: true,
+    origin: process.env.NODE_ENV === 'production'
+      ? 'https://www.chat-app.win'
+      : 'http://localhost:5173',
     credentials: true,
   });
   const configService = app.get(ConfigService);

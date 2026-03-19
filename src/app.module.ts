@@ -36,7 +36,9 @@ interface SubscriptionContext {
       useFactory: (authService: AuthService) => ({
         autoSchemaFile: true,
         cors: {
-          origin: true,
+          origin: process.env.NODE_ENV === 'production'
+            ? 'https://www.chat-app.win'
+            : 'http://localhost:5173',
           credentials: true,
         },
         subscriptions: {
