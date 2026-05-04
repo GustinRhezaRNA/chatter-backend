@@ -1,34 +1,44 @@
-# Chatter Backend
+Chatter Backend
 
-Repository ini merupakan sistem *backend* dari aplikasi Chatter (Aplikasi Percakapan Real-time). Sistem ini dirancang dengan arsitektur modern, dapat diskalakan (scalable), dan berbasis GraphQL.
+This repository contains the backend system for the Chatter application — a real-time chat platform built with a modern, scalable architecture using GraphQL.
 
-## Teknologi yang Digunakan
-Sistem *backend* ini berjalan di atas ekosistem Node.js dengan rincian *framework* dan pustaka (*libraries*) utama sebagai berikut:
+The backend is designed to handle real-time communication, secure authentication, and efficient data management.
 
-- **Kerangka Kerja (Framework): NestJS**
-  Digunakan sebagai fondasi utama aplikasi untuk memastikan struktur kode yang rapi, *modular*, dan mendukung prinsip arsitektur *dependency injection* yang *enterprise-grade*.
-- **API & Query Language: GraphQL & Apollo Server**
-  Sistem menggunakan `GraphQL` alih-alih REST API tradisional. Ini memberikan fleksibilitas ekstrem kepada *frontend* untuk hanya meminta data spesifik yang dibutuhkan.
-- **Basis Data: MongoDB & Mongoose**
-  Menggunakan basis data *NoSQL MongoDB* melalui *Object Data Modeling (ODM) Mongoose* untuk menyimpan data terstruktur seperti Pengguna (User), Profil, Ruang Obrolan (Chat Room), dan Pesan.
-- **Integrasi Cloud Storage: AWS S3**
-  Menggunakan `@aws-sdk/client-s3` untuk penyimpanan *cloud*. Ini digunakan untuk mengunggah dan melayani *file* media, misalnya foto profil avatar pengguna atau lampiran pesan.
-- **Manajemen State Secara Real-time: Redis**
-  Aplikasi ini menggunakan Redis (`ioredis`) melalui `graphql-redis-subscriptions`. Ini berfungsi sebagai *PubSub engine* (Publisher/Subscriber), memastikan bahwa saat diskalakan ke berbagai server (*instance*), notifikasi *real-time* tetap tersinkronisasi.
-- **High-Performance Logging: Pino**
-  Sebuah *logger* asinkron performa tinggi (`nestjs-pino`, `pino-http`) digunakan menjaga rekam jejak sistem secara terstruktur tanpa memperlambat aplikasi.
+🚀 Tech Stack
+- Framework: NestJS
+  Serves as the core foundation of the application, providing a clean, modular structure with enterprise-grade dependency injection.
+- API Layer: GraphQL & Apollo Server
+  Uses GraphQL instead of traditional REST APIs, allowing clients to request only the data they need with high flexibility.
+- Database: MongoDB & Mongoose
+  A NoSQL database solution used to manage structured data such as users, profiles, chat rooms, and messages.
+- Cloud Storage: AWS S3
+  Integrated via @aws-sdk/client-s3 for storing and serving user-uploaded media such as profile avatars and attachments.
+- Real-time Engine: Redis (Pub/Sub)
+  Powered by ioredis and graphql-redis-subscriptions to enable scalable real-time messaging across multiple server instances.
+- Logging: Pino
+  High-performance asynchronous logging (nestjs-pino, pino-http) for structured and efficient system monitoring.
+  
+✨ Backend Features
+1. JWT Authentication & Authorization
+Built with Passport.js and @nestjs/jwt
+Tokens are stored as HttpOnly cookies for better security
+Passwords are securely hashed using bcrypt
 
-## Fitur Utama (*Backend Features*)
-1. **Autentikasi & Otorisasi Berbasis JWT (JSON Web Token)**
-   - Menggunakan `Passport.js` dan `@nestjs/jwt`.
-   - Proses login menghasilkan token yang dikirim dan disimpan sebagai *HttpOnly Cookies*, metode pencegahan *Cross-Site Scripting (XSS)* yang aman.
-   - Menggunakan keamanan enkripsi *password* menggunakan `bcrypt`.
-2. **Sistem Pesan Instan (Real-time Messaging)**
-   - Terhubung secara *live* dua-arah (*bidirectional*).
-   - Menerapkan arsitektur WebSockets menggunakan paket murni `graphql-ws`, dan `graphql-subscriptions`.
-3. **Penyimpanan Gambar Avatar**
-   - User dapat mengunggah dan melampirkan gambar melalui koneksi aman AWS S3 Bucket.
-4. **Validasi Skema Kuat**
-   - Setiap *request* tervalidasi sangat ketat di level API menggunakan *decorator* dari tipe TypeScript seperti `class-validator`, `class-transformer` dan `joi` untuk validasi variabel *environment*.
-5. **Dukungan CORS (Cross-Origin Resource Sharing) Modular**
-   - Terintegrasi secara bawaan dengan kontrol CORS khusus yang memperbolehkan komunikasi aman lintas domain (antara Apollo Studio, *local server*, dan *domain production* frontend).
+2. Real-time Messaging System
+Fully bidirectional communication
+Implemented using WebSockets via graphql-ws and graphql-subscriptions
+Enables instant message delivery without polling
+
+3. Media Upload (Avatar Support)
+Users can upload profile images
+Files are securely stored and served via AWS S3
+
+4. Strong Validation Layer
+Request validation using:
+class-validator
+class-transformer
+joi (for environment variables)
+Ensures data consistency and prevents invalid input
+5. CORS Support
+Configurable Cross-Origin Resource Sharing (CORS)
+Allows secure communication between frontend, local development, and production environments
